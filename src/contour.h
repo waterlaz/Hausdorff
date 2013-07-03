@@ -18,6 +18,8 @@ typedef struct _contour_set_t {
     contour_t* children;
 } contour_t;
 
+double point_distance(point_t a, point_t b);
+
 contour_set_t* find_contours(image_t* img);
 
 

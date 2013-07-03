@@ -11,4 +11,6 @@ typedef struct _image_t {
     pixel_t** img;
 }
 
+image_t* image_create(int w, int h);
+
 #endif

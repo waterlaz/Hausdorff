@@ -9,8 +9,13 @@ typedef struct _image_t {
     int w;
     int h;
     pixel_t** img;
-}
+} image_t;
 
 image_t* image_create(int w, int h);
+
+void init_image_lib();
+
+image_t* image_load(char *s);
+
 
 #endif

@@ -17,5 +17,6 @@ void init_image_lib();
 
 image_t* image_load(char *s);
 
+void image_draw_line(image_t* img, int x1, int y1, int x2, int y2, pixel_t color);
 
 #endif

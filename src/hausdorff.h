@@ -6,6 +6,4 @@
 
 int frechet_dist(contour_t a, contour_t b, double eps);
 
-}
-
 #endif

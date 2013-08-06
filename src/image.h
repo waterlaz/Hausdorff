@@ -13,9 +13,14 @@ typedef struct _image_t {
 
 image_t* image_create(int w, int h);
 
+image_t* image_copy(image_t* img);
+
 void init_image_lib();
 
 image_t* image_load(char *s);
+
+
+int image_save(image_t* img, char *s);
 
 void image_draw_line(image_t* img, int x1, int y1, int x2, int y2, pixel_t color);
 

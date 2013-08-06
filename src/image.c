@@ -13,6 +13,15 @@ image_t* image_create(int w, int h){
     return image;
 }
 
+image_t* image_copy(image_t* img){
+	image_t* res = image_create(img->w, img->h);
+	int x, y;
+	for(x=0; x<img->w; x++)
+	for(y=0; y<img->h; y++)
+		res->img[x][y] = img->img[x][y];
+	return res;
+}
+
 
 
 void image_draw_line(image_t* img, int x1, int y1, int x2, int y2, pixel_t color){
@@ -88,6 +97,8 @@ int image_save(image_t* img, char *s){
 		printf("Failed converting image\n");
 		goto fail;
 	}
+	
+	iluFlipImage();
 	
 	if(!ilSaveImage(s)){
 		printf("Failed saving image to %s\n", s);

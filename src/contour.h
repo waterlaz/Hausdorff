@@ -30,6 +30,9 @@ double point_scalar(point_t a, point_t b);
 /* Vector sum of two points */
 point_t point_plus(point_t a, point_t b);
 
+/* Vector difference of two points */
+point_t point_minus(point_t a, point_t b);
+
 /* Product of a scalar on a point */
 point_t point_mul(double x, point_t a);
 

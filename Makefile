@@ -28,16 +28,16 @@ all: hausdorff.a
 tests: test_frechet test_image_filter test_image_load test_read_write_contour 
 
 test_frechet: hausdorff.a ${TESTOBJS}
-	${CC} $(CFLAGS) $(LDFLAGS) tests/test_frechet.c hausdorff.a -o test_frechet.o
+	${CC} $(CFLAGS) $(LDFLAGS) tests/test_frechet.c hausdorff.a -o test_frechet
 
 test_image_filter: hausdorff.a ${TESTOBJS}
-	${CC} $(CFLAGS) $(LDFLAGS) tests/test_image_filter.c hausdorff.a -o test_image_filter.o
+	${CC} $(CFLAGS) $(LDFLAGS) tests/test_image_filter.c hausdorff.a -o test_image_filter
 
 test_image_load: hausdorff.a ${TESTOBJS}
-	${CC} $(CFLAGS) $(LDFLAGS) tests/test_image_load.c hausdorff.a -o test_image_load.o
+	${CC} $(CFLAGS) $(LDFLAGS) tests/test_image_load.c hausdorff.a -o test_image_load
 
 test_read_write_contour: hausdorff.a ${TESTOBJS}
-	${CC} $(CFLAGS) $(LDFLAGS) tests/test_read_write_contour.c hausdorff.a -o test_read_write_contour.o
+	${CC} $(CFLAGS) $(LDFLAGS) tests/test_read_write_contour.c hausdorff.a -o test_read_write_contour
 
 hausdorff.a: ${COBJS}
 	${AR} -r $@ ${COBJS}

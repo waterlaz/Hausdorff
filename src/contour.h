@@ -15,7 +15,7 @@ typedef struct _contour_t {
 typedef struct _contour_set_t {
     contour_t* root;
     int n;  /* number of contours inside the current contours */
-    contour_t* children;
+    contour_set_t* children;
 } contour_set_t;
 
 

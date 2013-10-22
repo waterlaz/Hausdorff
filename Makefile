@@ -36,6 +36,9 @@ test_image_filter: hausdorff.a ${TESTOBJS}
 test_image_load: hausdorff.a ${TESTOBJS}
 	${CC} $(CFLAGS) $(LDFLAGS) tests/test_image_load.c hausdorff.a -o test_image_load
 
+test_contour: hausdorff.a ${TESTOBJS}
+	${CC} $(CFLAGS) $(LDFLAGS) tests/test_contour.c hausdorff.a -o test_contour
+
 test_read_write_contour: hausdorff.a ${TESTOBJS}
 	${CC} $(CFLAGS) $(LDFLAGS) tests/test_read_write_contour.c hausdorff.a -o test_read_write_contour
 

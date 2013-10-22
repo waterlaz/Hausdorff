@@ -15,7 +15,7 @@ typedef struct _contour_t {
 typedef struct _contour_set_t {
     contour_t* root;
     int n;  /* number of contours inside the current contours */
-    contour_set_t* children;
+    struct _contour_set_t* children;
 } contour_set_t;
 
 
@@ -43,7 +43,7 @@ double point_abs(point_t a);
 double point_distance(point_t a, point_t b);
 
 /* Find the contours on the image */
-contour_set_t* find_contours(image_t* img);
+contour_set_t* find_contours(image_t* img, int n_levels, int* level);
 
 /* Reads the contour from file file_name */
 /* The format has the following form: 

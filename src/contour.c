@@ -235,19 +235,14 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
             printf("%d %d    %d\n", c->root->leftmost_x, c->root->leftmost_y, c->root->size);
             int x0 = c->root->leftmost_x;
             int y0 = c->root->leftmost_y + 1;
-            int dx = 0;
-            int dy = -1;
-            int dxs [4] = {-1, 0, 1, 0};
-            int dys [4] = {0, -1, 0, 1};
-            int k;
-            while(){
-                k=0;
-                while(dxs[k]!=dx || dys[k]!=dy) k++;
-                k=(k+3)%4;
-                
+            int x = x0;
+            int y = y0;
+            printf("%d %d\n", x, y);
+            #define tst_pixel(x, y) ((x)>=0 && (x)<img->w && (y)>=0 && (y)<img->h && field[x][y]!=NULL)
+            #define turn_right(dx, dy) if(dx==0&&dy==-1){ dx=1; dy=0; } else if(dx==1&& dy==0){ dx=0;dy=1; } else if(dx==0&&dy==1){ dx=-1;dy=0; } else if(dx==-1&&dy==0){dx=0;dy=-1;}
+            #define turn_left(dx, dy) do{ turn_right(dx, dy);turn_right(dx, dy); turn_right(dx, dy);  }while(0)
+            while(x!=x0 || y!=y0){
             }
-
-
 
             img->img[c->root->leftmost_x][c->root->leftmost_y].r=255;
             img->img[c->root->leftmost_x][c->root->leftmost_y].g=0;

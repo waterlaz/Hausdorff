@@ -6,6 +6,15 @@
 
 #include "array2d.h"
 
+int min_int(int a, int b){
+    if(a<b) return a;
+    return b;
+}
+
+int min4_int(int a, int b, int c, int d){
+    return min_int( min_int(a, b), min_int(c, d) );
+}
+
 contour_t alloc_contour(int n){
     contour_t res;
     res.n = n;
@@ -139,6 +148,7 @@ struct component_pixel{
   int size; /* this one is only meaningful for the root */
   struct component_list* component; /* this one is only meaningful for the root */
   int leftmost_x, leftmost_y; /* this one is only meaningful for the root */
+  int is_read; /* this one is only meaningful for the root */
   int x, y;
 };
 
@@ -167,6 +177,10 @@ void join_components(struct component_pixel* p1, struct component_pixel* p2){
         r1->leftmost_x = r2->leftmost_x;
         r1->leftmost_y = r2->leftmost_y;
     }
+    /* This is a new region and therefore noone read it yet */
+    r2->is_read = 0;
+    r1->is_read = 0;
+    
     r2->father = r1;
     delete_component(r2->component);
     r2->component = NULL;
@@ -181,6 +195,7 @@ void try_join_pixels(struct component_pixel* a, struct component_pixel* b){
 
 struct component_pixel* create_pixel(struct component_list* list, int x, int y){
     struct component_pixel* res = (struct component_pixel*)malloc(sizeof(struct component_pixel));
+    res->is_read=0;
     res->x = x;
     res->y = y;
     res->leftmost_x = x; 
@@ -232,16 +247,39 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
         }
         struct component_list* c = components->next;
         while(c!=NULL){
+            if(c->root->is_read) continue;
             printf("%d %d    %d\n", c->root->leftmost_x, c->root->leftmost_y, c->root->size);
             int x0 = c->root->leftmost_x;
             int y0 = c->root->leftmost_y + 1;
             int x = x0;
             int y = y0;
-            printf("%d %d\n", x, y);
+            int dx = 0;
+            int dy = -1;
+            printf("%d %d   ", x, y);
+            x+=dx;
+            y+=dy;
             #define tst_pixel(x, y) ((x)>=0 && (x)<img->w && (y)>=0 && (y)<img->h && field[x][y]!=NULL)
-            #define turn_right(dx, dy) if(dx==0&&dy==-1){ dx=1; dy=0; } else if(dx==1&& dy==0){ dx=0;dy=1; } else if(dx==0&&dy==1){ dx=-1;dy=0; } else if(dx==-1&&dy==0){dx=0;dy=-1;}
-            #define turn_left(dx, dy) do{ turn_right(dx, dy);turn_right(dx, dy); turn_right(dx, dy);  }while(0)
+            #define turn_right(dx, dy) do{ int t=dx; dx=-dy; dy=t; }while(0) 
+            #define turn_left(dx, dy) do{ int t=dx; dx=dy; dy=-t; }while(0) 
+            #define right_pixelX(x, dx, dy) (x + min4_int(0, dx, dx-dy, -dy))
+            #define right_pixelY(y, dx, dy) (y + min4_int(0, dy, dy+dx,  dx))
+            #define can_move(x, y, dx, dy) (tst_pixel(right_pixelX(x, dx, dy), right_pixelY(y, dx, dy)))
             while(x!=x0 || y!=y0){
+//                printf("%d %d   ", x, y);
+                if(x<img->w && y< img->h){ 
+                    img->img[x][y].r=255;
+                    img->img[x][y].g=0;
+                    img->img[x][y].b=0;
+                }
+                if(!can_move(x, y, dx, dy)){
+                    turn_right(dx, dy);
+                }else{
+                    turn_left(dx, dy);
+                    if(!can_move(x, y, dx, dy))
+                        turn_right(dx, dy);
+                }
+                x+=dx;
+                y+=dy;
             }
 
             img->img[c->root->leftmost_x][c->root->leftmost_y].r=255;

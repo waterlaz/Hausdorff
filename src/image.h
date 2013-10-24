@@ -19,6 +19,9 @@ void init_image_lib();
 
 image_t* image_load(char *s);
 
+static inline int pixel_diff(pixel_t* a, pixel_t* b){
+	return (a->r - b->r)*(a->r - b->r) + (a->g - b->g)*(a->g - b->g) + (a->b - b->b)*(a->b - b->b);
+}
 
 int image_save(image_t* img, char *s);
 

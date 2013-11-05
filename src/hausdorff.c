@@ -36,9 +36,9 @@ void push(double a1, double b1, double* a2, double* b2){
     }
 }
 
-int frechet_dist(contour_t a, contour_t b, double eps){   
-    int n = a.n + 1;
-    int m = 2*b.n + 1;
+int frechet_dist(contour_t* a, contour_t* b, double eps){   
+    int n = a->n + 1;
+    int m = 2*b->n + 1;
     
     double** ha;
     double** hb;
@@ -53,8 +53,8 @@ int frechet_dist(contour_t a, contour_t b, double eps){
     int i, j;
     for(i=0; i<n; i++)
     for(j=0; j<m; j++){
-        interval(a.points[i%a.n], b.points[j%b.n], b.points[(j+1)%b.n], &va[i][j], &vb[i][j], eps);
-        interval(b.points[j%b.n], a.points[i%a.n], a.points[(i+1)%a.n], &ha[i][j], &hb[i][j], eps);       
+        interval(a->points[i%a->n], b->points[j%b->n], b->points[(j+1)%b->n], &va[i][j], &vb[i][j], eps);
+        interval(b->points[j%b->n], a->points[i%a->n], a->points[(i+1)%a->n], &ha[i][j], &hb[i][j], eps);       
     }
     
     for(i=0; i<n; i++){
@@ -65,7 +65,7 @@ int frechet_dist(contour_t a, contour_t b, double eps){
     }
     
     for(j=0; j<m; j++){
-        if(j<b.n){ 
+        if(j<b->n){ 
             va[n-1][j] = 1;
             vb[n-1][j] = -1;
         }else{
@@ -92,14 +92,14 @@ int frechet_dist(contour_t a, contour_t b, double eps){
             if(va[i][j] > vb[i][j]) push(ha[i][j], hb[i][j], &ha[i][j+1], &hb[i][j+1]);
             if(ha[i][j] > hb[i][j]) push(va[i][j], vb[i][j], &va[i+1][j], &vb[i+1][j]);
         }
-        for(j=0; j<b.n;j++){
-            va[0][j] = va[n-1][j+b.n];
+        for(j=0; j<b->n;j++){
+            va[0][j] = va[n-1][j+b->n];
         }
     
     }
     
-    for(j=b.n; j<2*b.n; j++){
-        if(va[a.n][j]<vb[a.n][j]) return 1;
+    for(j=b->n; j<2*b->n; j++){
+        if(va[a->n][j]<vb[a->n][j]) return 1;
     }
     
     return 0;

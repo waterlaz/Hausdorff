@@ -1,5 +1,5 @@
 INC = -I./src
-CFLAGS += -O0 -ggdb ${INC}
+CFLAGS += -O0 -ggdb -std=c99 ${INC}
 LDFLAGS += -O0 -ggdb -lm -lIL -l ILU
 
 AUDIO_API = portaudio

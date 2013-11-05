@@ -15,16 +15,48 @@ int min4_int(int a, int b, int c, int d){
     return min_int( min_int(a, b), min_int(c, d) );
 }
 
-contour_t alloc_contour(int n){
-    contour_t res;
-    res.n = n;
-    res.points = (point_t*)malloc(sizeof(point_t)*n);
+int is_box_inside(contour_bounding_box_t* a, contour_bounding_box_t* b){
+    return a->x1 >= b->x1 &&
+           a->x1 <= b->x2 &&
+           a->y1 >= b->y1 &&
+           a->y1 <= b->y2 &&
+           a->x2 >= b->x1 &&
+           a->x2 <= b->x2 &&
+           a->y2 >= b->y1 &&
+           a->y2 <= b->y2;
+}
+
+contour_meta_t default_contour_meta(){
+    contour_meta_t meta;
+    meta.area = NULL;
+    meta.perimeter = NULL;
+    meta.bounding_box = NULL;
+    return meta;
+}
+
+contour_t* alloc_contour(int n){
+    DEF_ALLOC(res, contour_t);
+    res->meta = default_contour_meta();
+    res->n = n;
+    res->points = (point_t*)malloc(sizeof(point_t)*n);
     return res;
 }
 
-void free_contour(contour_t contour){
-    free(contour.points);
+void free_contour_meta(contour_meta_t meta){
+    if(meta.area) free(meta.area);
+    if(meta.perimeter) free(meta.perimeter);
+    if(meta.bounding_box) free(meta.bounding_box);
 }
+
+
+void free_contour(contour_t* contour){
+    free(contour->points);
+    free_contour_meta(contour->meta);
+    free(contour);
+}
+
+
+
 
 double point_scalar(point_t a, point_t b){
     return a.x*b.x + a.y*b.y;
@@ -60,15 +92,15 @@ double point_distance(point_t a, point_t b){
     return point_abs(point_minus(b, a));
 }
 
-int read_contour(contour_t* contour, char* file_name){
+contour_t* read_contour(char* file_name){
     int n;
     FILE* f = fopen(file_name, "r");
     if(f==NULL){ 
         printf("Failed openning file %s \n", file_name); 
-        return 1;
+        return NULL;
     }
     fscanf(f, "%d", &n);
-    *contour = alloc_contour(n);
+    contour_t* contour = alloc_contour(n);
     int i;
     for(i=0; i<n; i++){
         double x, y;
@@ -77,11 +109,11 @@ int read_contour(contour_t* contour, char* file_name){
         contour->points[i].y = y;
     }
     fclose(f);
-    return 0;
+    return contour;
 }
 
 int write_contour(contour_t* contour, char* file_name){
-    FILE* f = fopen(file_name, "w");
+    FILE* f = fopen(file_name, "a");
     if(f==NULL){ 
         printf("Failed openning file %s for writing \n", file_name); 
         return 1;
@@ -114,6 +146,17 @@ int cmp_pcp(const void * a, const void * b){
     if (a1->color < b1->color) return -1;
     return 0;
 }
+
+
+/* compare contours by area, biggest area first */
+int cmp_contour_area(const void * a, const void * b){
+    const contour_t* a1 = a;
+    const contour_t* b1 = b;
+    // SEGFAULTS HERE:
+    return *(b1->meta.area) - *(a1->meta.area);
+}
+
+
 
 /* a double-linked list for contours */
 struct component_list{
@@ -231,6 +274,11 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
     components->next = NULL;
     components->prev = NULL;
 
+    
+    /* Here we will store all the found contours before sorting them by area */
+    int n_contours = 0;
+    contour_t* contours[10000];
+    
     p = pixels;
 
     for(i=0; i<n_levels; i++){
@@ -245,17 +293,37 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
             if(p->y < img->h - 1) try_join_pixels(field[p->x][p->y], field[p->x][p->y+1]);
             p++;
         }
+       
+
+        /* We start with c pointing to the first component and then go through all of them */
         struct component_list* c = components->next;
         while(c!=NULL){
             if(c->root->is_read) continue;
-            printf("%d %d    %d\n", c->root->leftmost_x, c->root->leftmost_y, c->root->size);
+            /* Here we temporarily store the contour: */
+            int xs[10000]; 
+            int ys[10000];
+            int v_count = 0;
+           
+            /* The area bounded by the contour:  */ 
+            int area = 0;
+
             int x0 = c->root->leftmost_x;
             int y0 = c->root->leftmost_y + 1;
             int x = x0;
             int y = y0;
+            xs[v_count] = x;
+            ys[v_count] = y;
+            v_count++;
+
+            /* Picking the initial direction of the contour traverse.
+             * Since we start from the bottom left of the leftmost pixel in the contour,
+             * the first step is possible */
             int dx = 0;
             int dy = -1;
-            printf("%d %d   ", x, y);
+
+            /* Updating the area */
+            area += dx*y;
+
             x+=dx;
             y+=dy;
             #define tst_pixel(x, y) ((x)>=0 && (x)<img->w && (y)>=0 && (y)<img->h && field[x][y]!=NULL)
@@ -265,12 +333,12 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
             #define right_pixelY(y, dx, dy) (y + min4_int(0, dy, dy+dx,  dx))
             #define can_move(x, y, dx, dy) (tst_pixel(right_pixelX(x, dx, dy), right_pixelY(y, dx, dy)))
             while(x!=x0 || y!=y0){
-//                printf("%d %d   ", x, y);
-                if(x<img->w && y< img->h){ 
-                    img->img[x][y].r=255;
-                    img->img[x][y].g=0;
-                    img->img[x][y].b=0;
-                }
+                img->img[min_int(x, img->w-1)][min_int(y, img->h-1)].r = 255;
+                img->img[min_int(x, img->w-1)][min_int(y, img->h-1)].g = 0;
+                img->img[min_int(x, img->w-1)][min_int(y, img->h-1)].b = 0; 
+                xs[v_count] = x;
+                ys[v_count] = y;
+                v_count++;
                 if(!can_move(x, y, dx, dy)){
                     turn_right(dx, dy);
                 }else{
@@ -278,16 +346,63 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
                     if(!can_move(x, y, dx, dy))
                         turn_right(dx, dy);
                 }
+                /* Updating the area */
+                area += dx*y;
+                /* Making the step */
                 x+=dx;
                 y+=dy;
             }
-
-            img->img[c->root->leftmost_x][c->root->leftmost_y].r=255;
-            img->img[c->root->leftmost_x][c->root->leftmost_y].g=0;
-            img->img[c->root->leftmost_x][c->root->leftmost_y].b=0;
+            
+            /* ignore realy small contours */
+            if(abs(area)>5){
+                /* Here we already have our contour vertexes in xs[] and ys[]. 
+                 * We need to create a new_contour and write the vertexes down */
+                contour_t* new_contour = alloc_contour(v_count);
+                new_contour->meta.area = ALLOC(double);
+                *new_contour->meta.area = abs(area);
+                DEF_ALLOC(box, contour_bounding_box_t);
+                /* Prepare the bounding box of a contour */
+                new_contour->meta.bounding_box = box;
+                box->x1 = xs[0];
+                box->y1 = ys[0];
+                box->x2 = xs[0];
+                box->y2 = ys[0];
+                while(v_count--){
+                    new_contour->points[v_count].x = xs[v_count];
+                    new_contour->points[v_count].y = ys[v_count];
+                    if(xs[v_count]<box->x1) box->x1 = xs[v_count];
+                    if(ys[v_count]<box->y1) box->y1 = ys[v_count];
+                    if(xs[v_count]>box->x2) box->x2 = xs[v_count];
+                    if(ys[v_count]>box->y2) box->y2 = ys[v_count];
+                }
+                contours[n_contours] = new_contour;
+                n_contours++;
+//                write_contour(new_contour, "contours");
+            }
             c = c->next; 
         }
-        printf("########################\n");
+    }
+
+    int** draw_table;
+    ALLOC_2DARRAY(draw_table, img->w+1, img->h+1, int);
+    for(i=0; i<img->w+1; i++)
+        for(j=0; j<img->h+1; j++){
+            draw_table[i][j] = -1;
+        }
+
+    /* sort the contours by area from biggest to smallest */
+    qsort(contours, n_contours, sizeof(contour_t*), cmp_contour_area);
+    for(i=0; i<n_contours; i++){
+        int k=i;
+        while(k--){
+            /* Check whether the i-th contour is inside the k-th contour */
+            if(is_box_inside(contours[i]->meta.bounding_box, contours[k]->meta.bounding_box)){
+                FOR_CONTOUR_POINTS(contours[k], point){
+                    
+                }
+            }
+        }
+
     }
 
     while(components->next!=NULL)
@@ -296,3 +411,4 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
     FREE_2DARRAY(field, img->w, img->h);
     return NULL;
 }
+

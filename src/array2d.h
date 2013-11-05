@@ -1,6 +1,10 @@
 #ifndef __ARRAY2D_H_
 #define __ARRAY2D_H_ 
 
+#define ALLOC(t) (t*)malloc(sizeof(t))
+
+#define DEF_ALLOC(v, t) t* v = ALLOC(t)
+
 #define ALLOC_2DARRAY(a, n, m, t) do { \
     a = (t**)malloc(sizeof(t*)*(n)); \
     int i; \

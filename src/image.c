@@ -55,7 +55,7 @@ image_t* image_load(char *s){
 	int w = ilGetInteger(IL_IMAGE_WIDTH);
 	int h = ilGetInteger(IL_IMAGE_HEIGHT);
 	char* pixels = (char*)malloc(sizeof(char)*w*h*3);
-	char* p = pixels;
+	unsigned char* p = pixels;
 	ilCopyPixels(0, 0, 0, w, h, 1, IL_RGB, IL_UNSIGNED_BYTE, pixels);
 	image_t* res = image_create(w, h);
 	int x, y;

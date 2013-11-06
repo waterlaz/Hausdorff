@@ -150,10 +150,9 @@ int cmp_pcp(const void * a, const void * b){
 
 /* compare contours by area, biggest area first */
 int cmp_contour_area(const void * a, const void * b){
-    const contour_t* a1 = a;
-    const contour_t* b1 = b;
-    // SEGFAULTS HERE:
-    return *(b1->meta.area) - *(a1->meta.area);
+    const contour_t** a1 = a;
+    const contour_t** b1 = b;
+    return *((*b1)->meta.area) - *((*a1)->meta.area);
 }
 
 
@@ -398,7 +397,7 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
             /* Check whether the i-th contour is inside the k-th contour */
             if(is_box_inside(contours[i]->meta.bounding_box, contours[k]->meta.bounding_box)){
                 FOR_CONTOUR_POINTS(contours[k], point){
-                    
+                    draw_table[point->x][point->y] = k;
                 }
             }
         }

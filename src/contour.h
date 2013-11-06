@@ -24,7 +24,12 @@ typedef struct _contour_t {
     contour_meta_t meta;
 } contour_t;
 
+#define NEXT_POINT(c, p) (((p) == c->points + c->n - 1) ? c->points : (p) + 1)
+#define PREV_POINT(c, p) (((p) == c->points) ? c->points + c->n - 1 : (p) - 1)
 #define FOR_CONTOUR_POINTS(c, p) for(point_t* p=c->points; p<c->points+c->n; p++)
+#define FOR_CONTOUR_EDGES(c, p1, p2) for(point_t *p1=c->points, *p2=p1+1; \
+                                         p1<c->points+c->n; p1++, \
+                                         p2= NEXT_POINT(c, p1))
 
 typedef struct _contour_set_t {
     contour_t* root;
@@ -32,6 +37,12 @@ typedef struct _contour_set_t {
     struct _contour_set_t* children;
 } contour_set_t;
 
+
+/* finds a point inside the given contour */
+point_t inside_point(contour_t* contour);
+
+/* check whether the point is inside the contour */
+int is_point_inside_contour(point_t* p, contour_t* contour);
 
 /* allocation and deallocation of the memory for contours */
 contour_t* alloc_contour(int n);

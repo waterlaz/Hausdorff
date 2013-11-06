@@ -55,8 +55,31 @@ void free_contour(contour_t* contour){
     free(contour);
 }
 
+point_t inside_point(contour_t* c){
+    point_t* p1 = c->points;
+    point_t* p2 = c->points+1;
+    double x = p1->y - p2->y;
+    double y = -(p1->x - p2->x);
+    double d = sqrt(x*x + y*y);
+    x/=2*d;
+    y/=2*d;
+    point_t res;
+    res.x = (p1->x+p2->x)/2+x;
+    res.y = (p1->y+p2->y)/2+y;
+    return res;
+}
 
-
+int is_point_inside_contour(point_t* p, contour_t* contour){
+    int c = 0;
+    FOR_CONTOUR_EDGES(contour, p1, p2){
+        if((p1->y < p->y && p->y < p2->y)||
+           (p1->y > p->y && p->y > p2->y)){
+            double xt = (p2->x - p1->x)*(p->y - p1->y)/(p2->y - p1->y) + p1->x;
+            if(xt < p->x) c++;
+        }
+    }
+    return c%2;
+}
 
 double point_scalar(point_t a, point_t b){
     return a.x*b.x + a.y*b.y;
@@ -297,7 +320,11 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
         /* We start with c pointing to the first component and then go through all of them */
         struct component_list* c = components->next;
         while(c!=NULL){
-            if(c->root->is_read) continue;
+            if(c->root->is_read){ 
+                c = c->next;
+                continue;
+            }
+            c->root->is_read=1;
             /* Here we temporarily store the contour: */
             int xs[10000]; 
             int ys[10000];
@@ -396,13 +423,17 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
         while(k--){
             /* Check whether the i-th contour is inside the k-th contour */
             if(is_box_inside(contours[i]->meta.bounding_box, contours[k]->meta.bounding_box)){
-                FOR_CONTOUR_POINTS(contours[k], point){
-                    draw_table[point->x][point->y] = k;
+                point_t p = inside_point(contours[i]);
+                if(is_point_inside_contour(&p, contours[k])){
+                    printf("%d inside %d\n", i, k);
+                    break;
                 }
             }
         }
 
     }
+    
+    FREE_2DARRAY(draw_table, img->w+1, img->h+1);
 
     while(components->next!=NULL)
         delete_component(components->next);

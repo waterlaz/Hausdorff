@@ -1,5 +1,6 @@
 #include "image.h"
 #include "contour.h"
+#include <stdlib.h>
 
 int main(int argc, char** argv){
     init_image_lib();

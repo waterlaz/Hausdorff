@@ -23,6 +23,28 @@ image_t* image_copy(image_t* img){
 }
 
 
+void image_free(image_t* img){
+    FREE_2DARRAY(img->img, img->w, img->h);
+    free(img);
+}
+
+pixel_t pixel_negative(pixel_t pixel){
+    pixel_t res;
+    res.r = MAX_COLOR - pixel.r;
+    res.g = MAX_COLOR - pixel.g;
+    res.b = MAX_COLOR - pixel.b;
+    return res;
+}
+
+image_t* image_negative(image_t* img){
+    image_t* res = image_copy(img);
+    int i, j;
+    for(i=0; i<img->w; i++)
+        for(j=0; j<img->h; j++){
+            res->img[i][j] = pixel_negative(img->img[i][j]);
+        }
+    return res;
+}
 
 void image_draw_line(image_t* img, int x1, int y1, int x2, int y2, pixel_t color){
 	int dx = x2>x1 ? 1 : -1;

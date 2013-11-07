@@ -1,9 +1,14 @@
 #ifndef __IMAGE_H_
 #define __IMAGE_H_ 
 
+#define MAX_COLOR 255
+
 typedef struct _pixel_t {
     int r, g, b;
 } pixel_t;
+
+pixel_t pixel_negative(pixel_t pixel);
+
 
 typedef struct _image_t {
     int w;
@@ -13,7 +18,11 @@ typedef struct _image_t {
 
 image_t* image_create(int w, int h);
 
+void image_free(image_t* img);
+
 image_t* image_copy(image_t* img);
+
+image_t* image_negative(image_t* img);
 
 void init_image_lib();
 

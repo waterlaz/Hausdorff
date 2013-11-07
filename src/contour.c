@@ -16,14 +16,15 @@ int min4_int(int a, int b, int c, int d){
 }
 
 int is_box_inside(contour_bounding_box_t* a, contour_bounding_box_t* b){
-    return a->x1 >= b->x1 &&
-           a->x1 <= b->x2 &&
-           a->y1 >= b->y1 &&
-           a->y1 <= b->y2 &&
-           a->x2 >= b->x1 &&
-           a->x2 <= b->x2 &&
-           a->y2 >= b->y1 &&
-           a->y2 <= b->y2;
+    double e = 0.000001;
+    return a->x1+e >= b->x1 &&
+           a->x1-e <= b->x2 &&
+           a->y1+e >= b->y1 &&
+           a->y1-e <= b->y2 &&
+           a->x2+e >= b->x1 &&
+           a->x2-e <= b->x2 &&
+           a->y2+e >= b->y1 &&
+           a->y2-e <= b->y2;
 }
 
 contour_meta_t default_contour_meta(){
@@ -369,9 +370,6 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
             #define right_pixelY(y, dx, dy) (y + min4_int(0, dy, dy+dx,  dx))
             #define can_move(x, y, dx, dy) (tst_pixel(right_pixelX(x, dx, dy), right_pixelY(y, dx, dy)))
             while(x!=x0 || y!=y0){
-                img->img[min_int(x, img->w-1)][min_int(y, img->h-1)].r = 255;
-                img->img[min_int(x, img->w-1)][min_int(y, img->h-1)].g = 0;
-                img->img[min_int(x, img->w-1)][min_int(y, img->h-1)].b = 0; 
                 xs[v_count] = x;
                 ys[v_count] = y;
                 v_count++;
@@ -422,21 +420,6 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
 
 
     /* sort the contours by area from biggest to smallest */
-    qsort(contours, n_contours, sizeof(contour_set_t*), cmp_contour_set_area);
-    for(i=0; i<n_contours; i++){
-        int k=i;
-        while(k--){
-            /* Check whether the i-th contour is inside the k-th contour */
-            if(is_box_inside(contours[i]->node->meta.bounding_box, contours[k]->node->meta.bounding_box)){
-                point_t p = inside_point(contours[i]->node);
-                if(is_point_inside_contour(&p, contours[k]->node)){
-                    printf("%d inside %d\n", i, k);
-                    break;
-                }
-            }
-        }
-
-    }
     
     while(components->next!=NULL)
         delete_component(components->next);
@@ -447,7 +430,44 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
 
 contour_set_t* find_contours(image_t* img, int n_levels, int* level){
     DEF_ALLOC_N(contours, contour_set_t*, 10000);
-    find_dark_contours(contours, img, n_levels, level);
+    int i;
+
+    int n_dark = find_dark_contours(contours, img, n_levels, level);
+
+    image_t* negative = image_negative(img);
+
+    int reversed_level[1000];
+    /* reverse the level array */
+    for(i=0; i<n_levels; i++)
+        reversed_level[i] = 255-level[n_levels-1-i];
+    int n_bright = find_dark_contours(contours+n_dark, negative, n_levels, reversed_level);
+    
+    int n_contours = n_dark+n_bright;
+    
+    qsort(contours, n_contours, sizeof(contour_set_t*), cmp_contour_set_area);
+    for(i=0; i<n_contours; i++){
+        int k=i;
+        while(k--) if(contours[k]!=NULL){
+            /* Check whether the i-th contour is inside the k-th contour */
+            if(is_box_inside(contours[i]->node->meta.bounding_box, contours[k]->node->meta.bounding_box)){
+                if(abs(*contours[i]->node->meta.area - *contours[k]->node->meta.area) < 0.3){
+                    free_contour(contours[i]->node);
+                    free(contours[i]);
+                    contours[i]=NULL;
+                    break;
+                }
+                point_t p = inside_point(contours[i]->node);
+                if(is_point_inside_contour(&p, contours[k]->node)){
+                    contours[i]->father = contours[k];
+                    contours[k]->n++;
+//                    printf("%d inside %d \n", i, k);
+                    break;
+                }
+            }
+        }
+
+    }
+
     free(contours);
     return NULL;
 }

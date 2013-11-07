@@ -468,6 +468,16 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
 
     }
 
+    for(i=0; i<n_contours; i++)if(contours[i]!=NULL){
+        contours[i]->children = ALLOC_N(contour_set_t*, contours[i]->n);
+        contours[i]->n = 0;
+        contours[i]->father->children[contours[i]->father->n] = contours[i];
+        contours[i]->father->n++;
+    }
+        
+    
+    contour_set_t* res = contours[0];
+
     free(contours);
-    return NULL;
+    return res;
 }

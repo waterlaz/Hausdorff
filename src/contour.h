@@ -35,7 +35,7 @@ typedef struct _contour_set_t {
     contour_t* node; /* this one should be NULL for the root node */
     struct _contour_set_t* father; /* ths one shoulde be NULL for the root node */
     int n;  /* number of contours inside the current contours */
-    struct _contour_set_t* children;
+    struct _contour_set_t** children;
 } contour_set_t;
 
 

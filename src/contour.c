@@ -172,10 +172,10 @@ int cmp_pcp(const void * a, const void * b){
 
 
 /* compare contours by area, biggest area first */
-int cmp_contour_area(const void * a, const void * b){
-    const contour_t** a1 = a;
-    const contour_t** b1 = b;
-    return *((*b1)->meta.area) - *((*a1)->meta.area);
+int cmp_contour_set_area(const void * a, const void * b){
+    const contour_set_t** a1 = a;
+    const contour_set_t** b1 = b;
+    return *((*b1)->node->meta.area) - *((*a1)->node->meta.area);
 }
 
 
@@ -273,10 +273,23 @@ struct component_pixel* create_pixel(struct component_list* list, int x, int y){
     return res;
 }
 
-contour_set_t* find_contours(image_t* img, int n_levels, int* level){
+
+contour_set_t* alloc_contour_set(){
+    DEF_ALLOC(res, contour_set_t);
+    res->node = NULL;
+    res->father = NULL;
+    res->children = NULL;
+    res->n = 0;
+    return res;
+}
+
+
+
+static int find_dark_contours(contour_set_t** contours, image_t* img, int n_levels, int* level){
     int n_pixels = img->w * img->h;
-    struct point_color_pair* pixels = (struct point_color_pair*)malloc(sizeof(struct point_color_pair)*n_pixels);
+    DEF_ALLOC_N(pixels, struct point_color_pair, n_pixels);
     int i, j;
+    /* Each field[][] belongs to one of the subsets in the disjoint set */
     struct component_pixel*** field;
     ALLOC_2DARRAY(field, img->w, img->h, struct component_pixel*);
     /* copying all the pixel colors and coordinates into a 1d array pixels[] */
@@ -292,23 +305,20 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
     /* sorting the pixels */
     qsort(pixels, n_pixels, sizeof(struct point_color_pair), cmp_pcp);
     
-    struct component_list* components = (struct component_list*)malloc(sizeof(struct component_list));
+    DEF_ALLOC(components, struct component_list);
     components->next = NULL;
     components->prev = NULL;
 
     
-    /* Here we will store all the found contours before sorting them by area */
+    /* n_contoues is the number of currently found contours */
     int n_contours = 0;
-    contour_t* contours[10000];
     
     p = pixels;
 
     for(i=0; i<n_levels; i++){
         int d = level[i];
         while(p<pixels+n_pixels && p->color<=d){
-//            printf("color %d  at %d %d\n", p->color, p->x, p->y);
             field[p->x][p->y] = create_pixel(components, p->x, p->y);
-  //          printf("made new pixel\n");
             if(p->x > 0) try_join_pixels(field[p->x][p->y], field[p->x - 1][p->y]);
             if(p->x < img->w - 1) try_join_pixels( field[p->x][p->y],  field[p->x + 1][p->y]);
             if(p->y > 0) try_join_pixels(field[p->x][p->y], field[p->x][p->y-1]);
@@ -401,7 +411,8 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
                     if(xs[v_count]>box->x2) box->x2 = xs[v_count];
                     if(ys[v_count]>box->y2) box->y2 = ys[v_count];
                 }
-                contours[n_contours] = new_contour;
+                contours[n_contours] = alloc_contour_set();
+                contours[n_contours]->node = new_contour;
                 n_contours++;
 //                write_contour(new_contour, "contours");
             }
@@ -409,22 +420,16 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
         }
     }
 
-    int** draw_table;
-    ALLOC_2DARRAY(draw_table, img->w+1, img->h+1, int);
-    for(i=0; i<img->w+1; i++)
-        for(j=0; j<img->h+1; j++){
-            draw_table[i][j] = -1;
-        }
 
     /* sort the contours by area from biggest to smallest */
-    qsort(contours, n_contours, sizeof(contour_t*), cmp_contour_area);
+    qsort(contours, n_contours, sizeof(contour_set_t*), cmp_contour_set_area);
     for(i=0; i<n_contours; i++){
         int k=i;
         while(k--){
             /* Check whether the i-th contour is inside the k-th contour */
-            if(is_box_inside(contours[i]->meta.bounding_box, contours[k]->meta.bounding_box)){
-                point_t p = inside_point(contours[i]);
-                if(is_point_inside_contour(&p, contours[k])){
+            if(is_box_inside(contours[i]->node->meta.bounding_box, contours[k]->node->meta.bounding_box)){
+                point_t p = inside_point(contours[i]->node);
+                if(is_point_inside_contour(&p, contours[k]->node)){
                     printf("%d inside %d\n", i, k);
                     break;
                 }
@@ -433,12 +438,16 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
 
     }
     
-    FREE_2DARRAY(draw_table, img->w+1, img->h+1);
-
     while(components->next!=NULL)
         delete_component(components->next);
     free(pixels);
     FREE_2DARRAY(field, img->w, img->h);
-    return NULL;
+    return n_contours;
 }
 
+contour_set_t* find_contours(image_t* img, int n_levels, int* level){
+    DEF_ALLOC_N(contours, contour_set_t*, 10000);
+    find_dark_contours(contours, img, n_levels, level);
+    free(contours);
+    return NULL;
+}

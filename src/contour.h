@@ -32,7 +32,8 @@ typedef struct _contour_t {
                                          p2= NEXT_POINT(c, p1))
 
 typedef struct _contour_set_t {
-    contour_t* root;
+    contour_t* node; /* this one should be NULL for the root node */
+    struct _contour_set_t* father; /* ths one shoulde be NULL for the root node */
     int n;  /* number of contours inside the current contours */
     struct _contour_set_t* children;
 } contour_set_t;
@@ -69,6 +70,9 @@ double point_abs(point_t a);
 
 /* Distance between two points */
 double point_distance(point_t a, point_t b);
+
+/* Creates an empty contour tree */
+contour_set_t* alloc_contour_set();
 
 /* Find the contours on the image */
 contour_set_t* find_contours(image_t* img, int n_levels, int* level);

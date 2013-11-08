@@ -292,6 +292,7 @@ void free_contour_set(contour_set_t* contour_set){
         free_contour_set(contour_set->children[i]);
     }
     free(contour_set->children);
+    free(contour_set);
 }
 
 
@@ -433,6 +434,10 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
     while(components->next!=NULL)
         delete_component(components->next);
     free(pixels);
+    free(components);
+    for(i=0; i<img->w; i++)
+        for(j=0; j<img->h; j++)
+            free(field[i][j]);
     FREE_2DARRAY(field, img->w, img->h);
     return n_contours;
 }
@@ -461,9 +466,9 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
         while(k--) if(contours[k]!=NULL){
             /* Check whether the i-th contour is inside the k-th contour */
             if(is_box_inside(contours[i]->node->meta.bounding_box, contours[k]->node->meta.bounding_box)){
+                /* If the areas are equal then this is obviously a duplicate */
                 if(abs(*contours[i]->node->meta.area - *contours[k]->node->meta.area) < 0.3){
-                    free_contour(contours[i]->node);
-                    free(contours[i]);
+                    free_contour_set(contours[i]);
                     contours[i]=NULL;
                     break;
                 }

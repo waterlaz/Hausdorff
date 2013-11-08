@@ -152,6 +152,14 @@ int write_contour(contour_t* contour, char* file_name){
 }
 
 
+
+void draw_contour(image_t* img, contour_t* contour, pixel_t color){
+    FOR_CONTOUR_EDGES(contour, p1, p2){
+        image_draw_line(img, (int)(p1->x+0.5), (int)(p1->y+0.5), (int)(p2->x+0.5), (int)(p2->y+0.5), color);
+    }
+}
+
+
 /*
  * Contour finding
  */

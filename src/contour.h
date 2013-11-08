@@ -80,6 +80,9 @@ void free_contour_set(contour_set_t* contour_set);
 /* Find the contours on the image */
 contour_set_t* find_contours(image_t* img, int n_levels, int* level);
 
+/* Draws the contour with the specified color */
+void draw_contour(image_t* img, contour_t* contour, pixel_t color);
+
 /* Reads the contour from file file_name */
 /* The format has the following form: 
  * <n - number of points>

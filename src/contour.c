@@ -469,8 +469,12 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
     }
 
     for(i=0; i<n_contours; i++)if(contours[i]!=NULL){
+        printf("%d\n", contours[i]->n);
         contours[i]->children = ALLOC_N(contour_set_t*, contours[i]->n);
         contours[i]->n = 0;
+        /* if NULL then this must be root, so nothing more to do here */
+        if(contours[i]->father==NULL) 
+            continue;
         contours[i]->father->children[contours[i]->father->n] = contours[i];
         contours[i]->father->n++;
     }

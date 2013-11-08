@@ -133,6 +133,7 @@ int image_save(image_t* img, char *s){
 	while ((Error = ilGetError()) != IL_NO_ERROR) {
 		printf("%d: %s\n", Error, iluErrorString(Error));
 	}
+    free(pixels);
 	ilDeleteImages(1, &texid);
 	return 1;
 }

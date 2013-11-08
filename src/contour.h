@@ -74,6 +74,9 @@ double point_distance(point_t a, point_t b);
 /* Creates an empty contour tree */
 contour_set_t* alloc_contour_set();
 
+/* Frees the set with all the contours */
+void free_contour_set(contour_set_t* contour_set);
+
 /* Find the contours on the image */
 contour_set_t* find_contours(image_t* img, int n_levels, int* level);
 

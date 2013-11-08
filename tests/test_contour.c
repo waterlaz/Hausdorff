@@ -9,6 +9,8 @@ int main(int argc, char** argv){
     int i;
     for(i=0; i<=255; i++)
         level[i]=i;
-    find_contours(img, 255, level);
+    contour_set_t* c = find_contours(img, 255, level);
     image_save(img, "dump.bmp");
+    image_free(img);
+    free(level);
 }

@@ -285,6 +285,15 @@ contour_set_t* alloc_contour_set(){
 }
 
 
+void free_contour_set(contour_set_t* contour_set){
+    int i;
+    if(contour_set->node!=NULL) free_contour(contour_set->node);
+    for(i=0; i<contour_set->n; i++){
+        free_contour_set(contour_set->children[i]);
+    }
+    free(contour_set->children);
+}
+
 
 static int find_dark_contours(contour_set_t** contours, image_t* img, int n_levels, int* level){
     int n_pixels = img->w * img->h;
@@ -442,6 +451,8 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
         reversed_level[i] = 255-level[n_levels-1-i];
     int n_bright = find_dark_contours(contours+n_dark, negative, n_levels, reversed_level);
     
+    image_free(negative);
+
     int n_contours = n_dark+n_bright;
     
     qsort(contours, n_contours, sizeof(contour_set_t*), cmp_contour_set_area);

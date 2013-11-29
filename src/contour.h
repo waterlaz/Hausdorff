@@ -55,6 +55,12 @@ contour_t* alloc_contour(int n);
 
 void free_contour(contour_t* contour);
 
+/* multiplies each coordinate by x */
+void scale_contour_by(contour_t* c, double x);
+
+/* resizes the contour to fit a 1x1 box */
+void scale_contour_to_1(contour_t* c);
+
 /* check if bounding box a is inside bounding box b */
 int is_box_inside(contour_bounding_box_t* a, contour_bounding_box_t* b);
 

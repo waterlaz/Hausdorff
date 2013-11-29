@@ -120,6 +120,37 @@ double point_distance(point_t a, point_t b){
     return point_abs(point_minus(b, a));
 }
 
+
+void scale_contour_by(contour_t* c, double x){
+    FOR_CONTOUR_POINTS(c, p){
+        p = point_mul(p, x);
+    }
+}
+
+void scale_contour_to_1(contour_t* c){
+    double max_x, max_y, min_x, min_y;
+    max_x = c->points[0].x;
+    max_y = c->points[0].y;
+    min_x = c->points[0].x;
+    min_y = c->points[0].y;
+    FOR_CONTOUR_POINTS(c, p){
+        if(p->x > max_x) max_x = p->x;
+        if(p->x < min_x) min_x = p->x;
+        if(p->y > max_y) max_y = p->y;
+        if(p->y < min_y) min_y = p->y;
+    }
+    
+    point_t d;
+    d.x = p->min_x;
+    d.y = p->min_y;
+
+    FOR_CONTOUR_POINTS(c, p){
+        p = point_minus(point_mul(p, x), d);
+    }
+
+}
+
+
 contour_t* read_contour(char* file_name){
     int n;
     FILE* f = fopen(file_name, "r");

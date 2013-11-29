@@ -152,6 +152,34 @@ int write_contour(contour_t* contour, char* file_name){
 }
 
 
+
+static int count_contours_in_set(contour_set_t c){
+    int n = c->n;
+    int res = 1;
+    while(n--){
+        res+=count_contours_in_set(c->children[n]);
+    }
+    return res;
+}
+
+void write_contour_set_to_array(contour_set_t c, contour_t** a){
+    **a = c->node;
+    *a++;
+    int n = c->n;
+    while(n--){
+        write_contour_set_to_array(c->children[n], a);
+    }
+}
+
+contour_t* list_contour_set(contour_set_t c, int* count){
+    *count = count_contours_in_set(c);
+    DEF_ALLOC_N(res, contour_t, (*count));
+    contour_t** p_res = &res;
+    write_contour_set_to_array(c, p_res);
+    return res;
+}
+
+
 /*
  * Contour finding
  */

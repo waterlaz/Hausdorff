@@ -6,7 +6,9 @@ pixel_t red;
 pixel_t blue;
 
 void draw(image_t* img, contour_set_t* s){
-    if(s->node.is_bright) draw_contour(img, s->node, red);
+    if(s->node->is_bright) draw_contour(img, s->node, red);
+                    else   draw_contour(img, s->node, blue);
+
     int i;
     for(i=0; i<s->n; i++){
         draw(img, s->children[i]);
@@ -26,8 +28,8 @@ int main(int argc, char** argv){
     int* level = (int*)malloc(sizeof(int)*256);
     int i;
     for(i=0; i<=255; i++)
-        level[i]=i;
-    contour_set_t* c = find_contours(img, 255, level);
+        level[i]=i*10;
+    contour_set_t* c = find_contours(img, 25, level);
     draw(img, c);
     image_save(img, "dump.bmp");
     image_free(img);

@@ -52,7 +52,7 @@ void image_draw_line(image_t* img, int x1, int y1, int x2, int y2, pixel_t color
 	int x = x1; 
 	int y = y1;
 	while(x!=x2 || y!=y2){
-		img->img[x][y]=color;
+		if(x>=0 && y>=0 && x<img->w && y<img->h)img->img[x][y]=color;
 		if(abs((x+dx-x1)*(y2-y1)-(y-y1)*(x2-x1))<abs((x-x1)*(y2-y1)-(y+dy-y1)*(x2-x1))){
 			x+=dx;
 		} else y+=dy;

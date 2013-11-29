@@ -6,12 +6,12 @@
 
 #include "array2d.h"
 
-int min_int(int a, int b){
+static int min_int(int a, int b){
     if(a<b) return a;
     return b;
 }
 
-int min4_int(int a, int b, int c, int d){
+static int min4_int(int a, int b, int c, int d){
     return min_int( min_int(a, b), min_int(c, d) );
 }
 
@@ -177,6 +177,11 @@ contour_t* list_contour_set(contour_set_t c, int* count){
     contour_t** p_res = &res;
     write_contour_set_to_array(c, p_res);
     return res;
+
+void draw_contour(image_t* img, contour_t* contour, pixel_t color){
+    FOR_CONTOUR_EDGES(contour, p1, p2){
+        image_draw_line(img, (int)(p1->x+0.5), (int)(p1->y+0.5), (int)(p2->x+0.5), (int)(p2->y+0.5), color);
+    }
 }
 
 
@@ -191,7 +196,7 @@ struct point_color_pair{
 };
 
 /* pixel compare function */
-int cmp_pcp(const void * a, const void * b){
+static int cmp_pcp(const void * a, const void * b){
     const struct point_color_pair* a1 = a;
     const struct point_color_pair* b1 = b;
     if (a1->color > b1->color) return 1;
@@ -201,7 +206,7 @@ int cmp_pcp(const void * a, const void * b){
 
 
 /* compare contours by area, biggest area first */
-int cmp_contour_set_area(const void * a, const void * b){
+static int cmp_contour_set_area(const void * a, const void * b){
     const contour_set_t** a1 = a;
     const contour_set_t** b1 = b;
     return *((*b1)->node->meta.area) - *((*a1)->node->meta.area);
@@ -217,7 +222,7 @@ struct component_list{
 };
 
 /* deletes a given component */
-void delete_component(struct component_list* c){
+static void delete_component(struct component_list* c){
     if(c->prev != NULL){
         c->prev->next = c->next;
     }
@@ -227,7 +232,7 @@ void delete_component(struct component_list* c){
     free(c);
 }
 
-struct component_list* create_component(struct component_list* l){
+static struct component_list* create_component(struct component_list* l){
     struct component_list* t = (struct component_list*)malloc(sizeof(struct component_list));
     t->next = l->next;
     t->prev = l;
@@ -247,7 +252,7 @@ struct component_pixel{
 };
 
 /* finds the root pixel for the given pixel in the disjoint-set */
-struct component_pixel* find_root(struct component_pixel* p){
+static struct component_pixel* find_root(struct component_pixel* p){
     if(p->father==NULL) return p;
     struct component_pixel* r = find_root(p->father);
     /* move the node up the tree for the speedup of further searches */
@@ -257,7 +262,7 @@ struct component_pixel* find_root(struct component_pixel* p){
 
 
 /* joins two subsets of disjoint set. The smaller subset is removed from the double-linked list of components */
-void join_components(struct component_pixel* p1, struct component_pixel* p2){
+static void join_components(struct component_pixel* p1, struct component_pixel* p2){
     struct component_pixel* r1 = find_root(p1);
     struct component_pixel* r2 = find_root(p2);
     if(r1->size < r2->size){
@@ -281,13 +286,13 @@ void join_components(struct component_pixel* p1, struct component_pixel* p2){
 }
 
 /* */
-void try_join_pixels(struct component_pixel* a, struct component_pixel* b){
+static void try_join_pixels(struct component_pixel* a, struct component_pixel* b){
     if(a==NULL || b==NULL) return;
     if(find_root(a)==find_root(b)) return;
     join_components(a, b);
 }
 
-struct component_pixel* create_pixel(struct component_list* list, int x, int y){
+static struct component_pixel* create_pixel(struct component_list* list, int x, int y){
     struct component_pixel* res = (struct component_pixel*)malloc(sizeof(struct component_pixel));
     res->is_read=0;
     res->x = x;

@@ -28,9 +28,16 @@ int main(int argc, char** argv){
     int* level = (int*)malloc(sizeof(int)*256);
     int i;
     for(i=0; i<=255; i++)
-        level[i]=i*10;
-    contour_set_t* c = find_contours(img, 25, level);
-    draw(img, c);
+        level[i]=i*20;
+    contour_set_t* c = find_contours(img, 12, level);
+    int n;
+    contour_t** cs = list_contour_set(c, &n);
+    while(n--){
+        if(cs[n]->is_bright) 
+            draw_contour(img, cs[n], red);
+          else draw_contour(img, cs[n], blue);
+    }
+    //draw(img, c); 
     image_save(img, "dump.bmp");
     image_free(img);
     free_contour_set(c);

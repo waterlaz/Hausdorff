@@ -86,6 +86,10 @@ double point_scalar(point_t a, point_t b){
     return a.x*b.x + a.y*b.y;
 }
     
+double point_vector(point_t a, point_t b){
+    return a.x*b.y - b.x*a.y;
+}
+
 point_t point_plus(point_t a, point_t b){
     point_t res;
     res.x = a.x + b.x;
@@ -330,6 +334,8 @@ void free_contour_set(contour_set_t* contour_set){
 }
 
 
+struct component_pixel*** fff;
+
 static int find_dark_contours(contour_set_t** contours, image_t* img, int n_levels, int* level){
     int n_pixels = img->w * img->h;
     DEF_ALLOC_N(pixels, struct point_color_pair, n_pixels);
@@ -337,6 +343,7 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
     /* Each field[][] belongs to one of the subsets in the disjoint set */
     struct component_pixel*** field;
     ALLOC_2DARRAY(field, img->w, img->h, struct component_pixel*);
+    fff = field;
     /* copying all the pixel colors and coordinates into a 1d array pixels[] */
     struct point_color_pair* p = pixels;
     for(i=0; i<img->w; i++)
@@ -359,7 +366,11 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
     int n_contours = 0;
     
     p = pixels;
-
+    
+    /* Here we temporarily store each the contour: */
+    DEF_ALLOC_N(xs, int, (img->w+1)*(img->h+1));
+    DEF_ALLOC_N(ys, int, (img->w+1)*(img->h+1));
+    
     for(i=0; i<n_levels; i++){
         int d = level[i];
         while(p<pixels+n_pixels && p->color<=d){
@@ -380,10 +391,7 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
                 continue;
             }
             c->root->is_read=1;
-            /* Here we temporarily store the contour: */
-            int xs[10000]; 
-            int ys[10000];
-            int v_count = 0;
+            int v_count = 0; /* the number of vertexes in the current contour */
            
             /* The area bounded by the contour:  */ 
             int area = 0;
@@ -407,7 +415,7 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
 
             x+=dx;
             y+=dy;
-            #define tst_pixel(x, y) ((x)>=0 && (x)<img->w && (y)>=0 && (y)<img->h && field[x][y]!=NULL)
+            #define tst_pixel(x, y) ((x)>=0 && (x)<img->w && (y)>=0 && (y)<img->h && (/*printf("%d %d / %d %d\n", x, y, img->w, img->h),*/field[x][y]!=NULL))
             #define turn_right(dx, dy) do{ int t=dx; dx=-dy; dy=t; }while(0) 
             #define turn_left(dx, dy) do{ int t=dx; dx=dy; dy=-t; }while(0) 
             #define right_pixelX(x, dx, dy) (x + min4_int(0, dx, dx-dy, -dy))
@@ -417,6 +425,16 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
                 xs[v_count] = x;
                 ys[v_count] = y;
                 v_count++;
+            if(field!=fff){
+                
+                printf("ololo\n");
+                int i, j;
+                while(v_count--){
+                    printf("%d %d\n", xs[v_count], ys[v_count]);
+                }
+                exit(100);
+            }
+//                printf("%d\n", v_count);
                 if(!can_move(x, y, dx, dy)){
                     turn_right(dx, dy);
                 }else{
@@ -456,6 +474,7 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
                 contours[n_contours] = alloc_contour_set();
                 contours[n_contours]->node = new_contour;
                 n_contours++;
+                printf("%d\n", n_contours);
 //                write_contour(new_contour, "contours");
             }
             c = c->next; 
@@ -469,6 +488,8 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
         delete_component(components->next);
     free(pixels);
     free(components);
+    free(xs);
+    free(ys);
     for(i=0; i<img->w; i++)
         for(j=0; j<img->h; j++)
             free(field[i][j]);
@@ -477,7 +498,7 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
 }
 
 contour_set_t* find_contours(image_t* img, int n_levels, int* level){
-    DEF_ALLOC_N(contours, contour_set_t*, 10000);
+    DEF_ALLOC_N(contours, contour_set_t*, 1000000);
     int i;
 
     int n_dark = find_dark_contours(contours, img, n_levels, level);
@@ -493,9 +514,15 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
     image_free(negative);
 
     int n_contours = n_dark+n_bright;
+
+    for(i=0;i<n_dark;i++)
+        contours[i]->node->is_bright = 0;
+    for(i=n_dark;i<n_contours;i++)
+        contours[i]->node->is_bright = 1;
     
     qsort(contours, n_contours, sizeof(contour_set_t*), cmp_contour_set_area);
     for(i=0; i<n_contours; i++){
+        printf("finding home for %d\n", i);
         int k=i;
         while(k--) if(contours[k]!=NULL){
             /* Check whether the i-th contour is inside the k-th contour */
@@ -519,7 +546,7 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
     }
 
     for(i=0; i<n_contours; i++)if(contours[i]!=NULL){
-        printf("%d\n", contours[i]->n);
+        printf("=) %d\n", contours[i]->n);
         contours[i]->children = ALLOC_N(contour_set_t*, contours[i]->n);
         contours[i]->n = 0;
         /* if NULL then this must be root, so nothing more to do here */
@@ -531,7 +558,7 @@ contour_set_t* find_contours(image_t* img, int n_levels, int* level){
         
     
     contour_set_t* res = contours[0];
-
+    printf("done!\n");
     free(contours);
     return res;
 }

@@ -21,6 +21,7 @@ typedef struct _contour_meta_t {
 typedef struct _contour_t {
     int n;
     point_t* points;
+    int is_bright;
     contour_meta_t meta;
 } contour_t;
 
@@ -59,6 +60,9 @@ int is_box_inside(contour_bounding_box_t* a, contour_bounding_box_t* b);
 
 /* Scalar product of two points */
 double point_scalar(point_t a, point_t b);
+
+/* value of vector product of two points */
+double point_vector(point_t a, point_t b);
 
 /* Vector sum of two points */
 point_t point_plus(point_t a, point_t b);

@@ -40,6 +40,10 @@ typedef struct _contour_set_t {
 } contour_set_t;
 
 
+
+/*  Create an array of contours from contour_set_t */
+contour_t* list_contour_set(contour_set_t c, int* count);
+
 /* finds a point inside the given contour */
 point_t inside_point(contour_t* contour);
 

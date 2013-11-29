@@ -21,4 +21,14 @@
     free(a); \
     } while(0)
 
+#define PRECEDE(code) for(int __exit_var__=1; __exit_var__;) for(code;__exit_var__;__exit_var__=0)
+#define FOLLOW(code) for(int __exit_var__=1; __exit_var__;code, __exit_var__=0)
+ 
+#define FILTER(a, na, b, nb, i) PRECEDE((b=malloc(sizeof(a[0])*n), nb=0))\
+     for(int i=0, __accept__=0;i<na; i++, __accept__=0)\
+      FOLLOW( __accept__?(b[nb]=a[i],(++nb)):(nb=nb))
+      
+#define ACCEPT __accept__=1
+
+
 #endif

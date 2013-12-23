@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "contour.h"
 #include "math.h"
@@ -13,6 +14,11 @@ static int min_int(int a, int b){
 
 static int min4_int(int a, int b, int c, int d){
     return min_int( min_int(a, b), min_int(c, d) );
+}
+
+static double max_double(double a, double b){
+    if(a>b) return a;
+    return b;
 }
 
 int is_box_inside(contour_bounding_box_t* a, contour_bounding_box_t* b){
@@ -38,9 +44,17 @@ contour_meta_t default_contour_meta(){
 contour_t* alloc_contour(int n){
     DEF_ALLOC(res, contour_t);
     res->meta = default_contour_meta();
+    res->misc = NULL;
     res->n = n;
     res->points = (point_t*)malloc(sizeof(point_t)*n);
     return res;
+}
+
+
+contour_t* copy_contour(contour_t* c){
+    contour_t* new_c = alloc_contour(c->n);
+    memcpy(new_c->points, c->points, c->n*sizeof(point_t));
+    new_c->is_bright = c->is_bright;
 }
 
 void free_contour_meta(contour_meta_t meta){
@@ -123,7 +137,7 @@ double point_distance(point_t a, point_t b){
 
 void scale_contour_by(contour_t* c, double x){
     FOR_CONTOUR_POINTS(c, p){
-        p = point_mul(p, x);
+        *p = point_mul(x, *p);
     }
 }
 
@@ -141,11 +155,13 @@ void scale_contour_to_1(contour_t* c){
     }
     
     point_t d;
-    d.x = p->min_x;
-    d.y = p->min_y;
+    d.x = min_x;
+    d.y = min_y;
+
+    double x = 1/max_double(max_x-min_x, max_y-min_y);
 
     FOR_CONTOUR_POINTS(c, p){
-        p = point_minus(point_mul(p, x), d);
+        *p = point_mul(x, point_minus(*p, d));
     }
 
 }

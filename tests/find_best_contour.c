@@ -29,9 +29,17 @@ int main(int argc, char** argv){
         level[i]=i*10;
     contour_set_t* cs = find_contours(img, 26, level);
     contour_t* c = read_contour(argv[2]);
+    scale_contour_to_1(c);
+
     
     int n;
     contour_t** lc = list_contour_set(cs, &n);
+    for(i=0; i<n; i++){
+        contour_t* tmp_c = copy_contour(lc[i]);
+        lc[i]->misc = (void*)tmp_c;
+        scale_contour_to_1(lc[i]);
+    }
+   
 
     contour_t** new_lc;
     int new_n;
@@ -43,16 +51,19 @@ int main(int argc, char** argv){
     free(lc); lc = new_lc; n = new_n;
 
     double a = 0;
-    double b = 100;
-    while(n!=1 && b-a>1){
+    double b = 1;
+    while(n!=1 && b-a>0.1){
+        printf("%lf %lf\n", a, b);
+        printf("%d contours\n", n);
         double epsilon = (a+b)/2;
         FILTER(lc, n, new_lc, new_n, i){
-            if(frechet_dist(lc[i], c, epsilon)) ACCEPT;
+            if(frechet_dist(lc[i], c, epsilon)){ printf("accepted\n"); ACCEPT; }
         }
         if(new_n){
             n = new_n;
             free(lc);
             lc = new_lc;
+            b = epsilon;
         }else{
             a = epsilon;
             free(new_lc);
@@ -60,7 +71,8 @@ int main(int argc, char** argv){
     }
 
     if(n){
-        draw_contour(img, lc[0], red);
+        printf("Found it!!!\n");
+        draw_contour(img, (contour_t*)lc[0]->misc, red);
     }
 
 

@@ -23,6 +23,7 @@ typedef struct _contour_t {
     point_t* points;
     int is_bright;
     contour_meta_t meta;
+    void* misc;
 } contour_t;
 
 #define NEXT_POINT(c, p) (((p) == c->points + c->n - 1) ? c->points : (p) + 1)
@@ -52,6 +53,9 @@ int is_point_inside_contour(point_t* p, contour_t* contour);
 
 /* allocation and deallocation of the memory for contours */
 contour_t* alloc_contour(int n);
+
+/* copy the contour. Doesn't copy any meta info */
+contour_t* copy_contour(contour_t* c);
 
 void free_contour(contour_t* contour);
 

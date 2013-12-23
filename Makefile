@@ -13,6 +13,7 @@ TESTFILES = tests/test_frechet.c \
 	tests/test_image_filter.c \
 	tests/test_image_load.c \
 	tests/test_read_write_contour.c \
+	tests/find_best_contour.c
 
 COBJS = ${CFILES:.c=.o}
 TESTOBJS = ${TESTFILES:.c=.o}
@@ -41,6 +42,9 @@ test_contour: hausdorff.a ${TESTOBJS}
 
 test_read_write_contour: hausdorff.a ${TESTOBJS}
 	${CC} $(CFLAGS) $(LDFLAGS) tests/test_read_write_contour.c hausdorff.a -o test_read_write_contour
+
+find_best_contour: hausdorff.a ${TESTOBJS} tests/find_best_contour.o
+	${CC} $(CFLAGS) $(LDFLAGS) tests/find_best_contour.c hausdorff.a -o find_best_contour
 
 hausdorff.a: ${COBJS}
 	${AR} -r $@ ${COBJS}

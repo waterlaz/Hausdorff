@@ -52,7 +52,7 @@ int main(int argc, char** argv){
 
     double a = 0;
     double b = 1;
-    while(n!=1 && b-a>0.1){
+    while(n!=1 && b-a>0.02){
         printf("%lf %lf\n", a, b);
         printf("%d contours\n", n);
         double epsilon = (a+b)/2;
@@ -74,7 +74,10 @@ int main(int argc, char** argv){
         printf("Found it!!!\n");
         draw_contour(img, (contour_t*)lc[0]->misc, red);
     }
-
+    
+//    for(i=0; i<lc[0]->n; i+=10){
+//        printf("%lf %lf\n", lc[0]->points[i].x, lc[0]->points[i].y);
+//    }
 
     image_save(img, argv[3]);
     image_free(img);

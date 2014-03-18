@@ -28,7 +28,7 @@ void interval(point_t x, point_t y1, point_t y2, double* a, double* b, double ep
     *b = alpha*point_abs(dy)+delta;
 }
 
-void push(double a1, double b1, double* a2, double* b2){
+inline static void push(double a1, double b1, double* a2, double* b2){
     if (a1>*a2) *a2 = a1;
     if (a1>b1){
         *a2 = 1;
@@ -84,16 +84,20 @@ int frechet_dist(contour_t* a, contour_t* b, double eps){
         printf("##########\n");
     }
     */
-    
-    int z = 300;
-    while(z--){
+   
+    int change = 1;
+    while(change){
+        change = 0;
         for(i=0; i<n-1; i++)
         for(j=0; j<m-1; j++){
             if(va[i][j] > vb[i][j]) push(ha[i][j], hb[i][j], &ha[i][j+1], &hb[i][j+1]);
             if(ha[i][j] > hb[i][j]) push(va[i][j], vb[i][j], &va[i+1][j], &vb[i+1][j]);
         }
         for(j=0; j<b->n;j++){
-            va[0][j] = va[n-1][j+b->n];
+            if(va[0][j] < va[n-1][j+b->n]){
+                va[0][j] = va[n-1][j+b->n];
+                change = 1;
+            }
         }
     
     }

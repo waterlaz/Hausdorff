@@ -113,4 +113,10 @@ contour_t* read_contour(char* file_name);
 /* Write the contour to file file_name */
 int write_contour(contour_t* contour, char* file_name);
 
+/* Writes the contour tree to file */
+/* The contour tree is a directory with 
+ * a file "tree" corresponding to the contour structure
+ * and other files with contour deffinitions */
+int write_contour_tree(contour_set_t* contours, char* dirname);
+
 #endif

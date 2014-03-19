@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "contour.h"
 #include "math.h"
@@ -203,6 +206,45 @@ int write_contour(contour_t* contour, char* file_name){
 }
 
 
+void write_contours_rec(int* n, int depth, FILE* f, contour_set_t* cur, char* dirname){
+    (*n)++;
+    int i=depth;
+    while(i--) fprintf(f, " ");
+    fprintf(f, "%d\n", *n);
+
+    char cont_file[2005];
+
+    strncpy(cont_file, dirname, 1000);
+    strncat(cont_file, "/", 1000);
+    char* s = cont_file;
+    while (*s) s++;
+    snprintf(s, 1000, "%d", *n);
+    
+    write_contour(cur->node, cont_file);
+
+    for(i=0; i<cur->n; i++)
+        write_contours_rec(n, depth+1, f, cur->children[i], dirname);
+
+}
+
+int write_contour_tree(contour_set_t* contours, char* dirname){
+    if(mkdir(dirname, 0777)){
+        printf("Error. Couldn't create dir %s", dirname);
+        return 1;
+    }
+    char tree_file[2005];
+
+    strncpy(tree_file, dirname, 1000);
+    strncat(tree_file, "/tree", 1000);
+    FILE* f = fopen(tree_file, "a");
+   
+    int n=0;
+
+    write_contours_rec(&n, 0, f, contours, dirname);
+
+    fclose(f);
+    return 0;
+}
 
 int count_contours_in_set(contour_set_t* c){
     int n = c->n;

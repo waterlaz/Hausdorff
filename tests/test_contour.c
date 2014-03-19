@@ -1,6 +1,7 @@
 #include "image.h"
 #include "contour.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 pixel_t red;
 pixel_t blue;
@@ -45,6 +46,7 @@ int main(int argc, char** argv){
             draw_contour(img, cs[n], red);
           else draw_contour(img, cs[n], blue);
     }*/
+    write_contour_tree(c, "conturs");
     draw(img, c); 
     image_save(img, argv[2]);
     image_free(img);

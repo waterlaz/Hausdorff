@@ -205,23 +205,27 @@ int write_contour(contour_t* contour, char* file_name){
     return 0;
 }
 
-
+/* This function recursively walks around the contur tree, printing the contours to files and building a tree file */
 void write_contours_rec(int* n, int depth, FILE* f, contour_set_t* cur, char* dirname){
+    /* increse the number of contours-nodes */
     (*n)++;
+    /* print spaces accoding to depth */
     int i=depth;
     while(i--) fprintf(f, " ");
+    /* finally print the file name with the contour contents */
     fprintf(f, "%d\n", *n);
-
+    
+    /* the actual filename is <dirname>/<*n> */
     char cont_file[2005];
-
     strncpy(cont_file, dirname, 1000);
     strncat(cont_file, "/", 1000);
     char* s = cont_file;
     while (*s) s++;
     snprintf(s, 1000, "%d", *n);
-    
+    /* write the contour to <cont_file> */
     write_contour(cur->node, cont_file);
-
+    
+    /* make a recursive call with depth incresed by one */
     for(i=0; i<cur->n; i++)
         write_contours_rec(n, depth+1, f, cur->children[i], dirname);
 
@@ -244,6 +248,17 @@ int write_contour_tree(contour_set_t* contours, char* dirname){
 
     fclose(f);
     return 0;
+}
+
+
+
+contour_set_t* read_contur_tree(char* dirname){
+    char tree_file[2005];
+    strncpy(tree_file, dirname, 1000);
+    strncat(tree_file, "/tree", 1000);
+    FILE* f = fopen(tree_file, "r");
+    contour_set_t* cs = alloc_contour_set();
+    fclose(f);
 }
 
 int count_contours_in_set(contour_set_t* c){

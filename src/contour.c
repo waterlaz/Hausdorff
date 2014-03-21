@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+
 #include "contour.h"
 #include "math.h"
 
@@ -212,16 +213,19 @@ void write_contours_rec(int* n, int depth, FILE* f, contour_set_t* cur, char* di
     /* print spaces accoding to depth */
     int i=depth;
     while(i--) fprintf(f, " ");
-    /* finally print the file name with the contour contents */
-    fprintf(f, "%d\n", *n);
-    
+    /* print contour name(number) */
+    fprintf(f, "contour_%d\n", *n);
+    i=depth;
+    while(i--) fprintf(f, " ");
+    fprintf(f, "%d\n", cur->n);
+
     /* the actual filename is <dirname>/<*n> */
     char cont_file[2005];
     strncpy(cont_file, dirname, 1000);
     strncat(cont_file, "/", 1000);
     char* s = cont_file;
     while (*s) s++;
-    snprintf(s, 1000, "%d", *n);
+    snprintf(s, 1000, "contour_%d", *n);
     /* write the contour to <cont_file> */
     write_contour(cur->node, cont_file);
     
@@ -250,15 +254,33 @@ int write_contour_tree(contour_set_t* contours, char* dirname){
     return 0;
 }
 
-
+contour_set_t* read_contour_tree_rec(char* dirname, FILE* f){
+    char file_name[10000];
+    strcpy(file_name, dirname);
+    strcat(file_name, "/");
+    fscanf(f, "%s", file_name + strlen(file_name));
+    contour_set_t* cs = alloc_contour_set();
+    cs->node = read_contour(file_name);
+    fscanf(f, "%d", &cs->n);
+    int i;
+    cs->children = ALLOC_N(contour_set_t*, cs->n);
+    for(i=0; i<cs->n; i++){
+        cs->children[i] = read_contour_tree_rec(dirname, f);
+        cs->children[i]->father=cs;
+    }
+    return cs;
+}
 
 contour_set_t* read_contur_tree(char* dirname){
     char tree_file[2005];
     strncpy(tree_file, dirname, 1000);
     strncat(tree_file, "/tree", 1000);
     FILE* f = fopen(tree_file, "r");
-    contour_set_t* cs = alloc_contour_set();
+
+    contour_set_t* cs = read_contour_tree_rec(dirname, f);
+    cs->father=NULL;
     fclose(f);
+    return cs;
 }
 
 int count_contours_in_set(contour_set_t* c){

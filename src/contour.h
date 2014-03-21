@@ -119,4 +119,8 @@ int write_contour(contour_t* contour, char* file_name);
  * and other files with contour deffinitions */
 int write_contour_tree(contour_set_t* contours, char* dirname);
 
+/* reads the contour tree from file */
+contour_set_t* read_contur_tree(char* dirname);
+
+
 #endif

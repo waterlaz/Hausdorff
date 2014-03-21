@@ -40,6 +40,9 @@ test_image_load: hausdorff.a ${TESTOBJS}
 test_contour: hausdorff.a ${TESTOBJS}
 	${CC} $(CFLAGS) $(LDFLAGS) tests/test_contour.c hausdorff.a -o test_contour
 
+show_contourset: hausdorff.a ${TESTOBJS}
+	${CC} $(CFLAGS) $(LDFLAGS) tests/show_contourset.c hausdorff.a -o show_contourset
+
 test_read_write_contour: hausdorff.a ${TESTOBJS}
 	${CC} $(CFLAGS) $(LDFLAGS) tests/test_read_write_contour.c hausdorff.a -o test_read_write_contour
 

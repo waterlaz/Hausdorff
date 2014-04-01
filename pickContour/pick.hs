@@ -37,6 +37,26 @@ viewer path = do
   scrollWin1 <- imageScrollWinNew view
   win `containerAdd` scrollWin1
   
+  pixbuf <- pixbufNewFromFile path
+  w <- pixbufGetWidth pixbuf
+  h <- pixbufGetHeight pixbuf
+  pm <- pixmapNew (Nothing :: Maybe Pixmap) w h (Just 24)
+  gc <- gcNew pm
+
+  let drawInfo x y = do
+        drawPixbuf pm gc pixbuf 0 0 0 0 (-1) (-1) RgbDitherNone 0 0
+        gcSetValues gc newGCValues{ foreground = Color 65535 0 0 }
+        drawLine pm gc (x-10, y-1) (x+10, y+10)
+        pixbuf2 <- liftM fromJust $ pixbufGetFromDrawable pm (Rectangle 0 0 (w-1) (h-1))
+        imageViewSetPixbuf view (Just pixbuf2) True
+
+
+  view `on` motionNotifyEvent $ do 
+    (x, y) <- eventCoordinates
+    Just (Rectangle x0  y0 _ _) <- liftIO $ imageViewGetDrawRect view
+    liftIO  (print (x, y) >> drawInfo ((round x) - x0) ((round y) - y0)) >> return False
+
+  
   let setImage img = do
         catchGError (do pixbuf <- pixbufNewFromFile img
                         w <- pixbufGetWidth pixbuf

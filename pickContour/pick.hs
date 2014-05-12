@@ -9,6 +9,7 @@ import Control.Monad.IO.Class
 import Data.IORef
 import System.Glib.GError
 import Graphics.UI.Gtk.Gdk.GC
+import Data.Time.Clock
 
 import Data.Maybe
 -- import qualified Config as C
@@ -25,6 +26,12 @@ data ContourTrea = ContourTrea {
                     contour :: Contour,
                     subTrea :: [ContourTrea]
                 }
+{-
+readContourTree :: String -> IO ContourTrea
+readContourTree s = do
+    f <- readFile s
+-}
+
 
 readContour :: String -> IO Contour
 readContour s = do
@@ -45,6 +52,7 @@ viewer pathImg pathCont = do
   windowSetDefaultSize win 600 400
   windowSetPosition win WinPosCenter
 
+  lastDrawTimeVar <- newIORef =<< getCurrentTime
   
   view <- imageViewNew
   scrollWin1 <- imageScrollWinNew view
@@ -64,10 +72,16 @@ viewer pathImg pathCont = do
         imageViewSetPixbuf view (Just pixbuf2) True
 
 
-  view `on` motionNotifyEvent $ do 
-    (x, y) <- eventCoordinates
-    Just (Rectangle x0  y0 _ _) <- liftIO $ imageViewGetDrawRect view
-    liftIO  (print (x, y) >> drawInfo ((round x) - x0) ((round y) - y0)) >> return False
+  view `on` motionNotifyEvent $ do
+    time <- liftIO getCurrentTime
+    lastDrawTime <-liftIO $ readIORef lastDrawTimeVar
+    liftIO $ print $ diffUTCTime lastDrawTime time
+    if diffUTCTime time lastDrawTime > 0.03 then do
+        liftIO $ writeIORef lastDrawTimeVar time
+        (x, y) <- eventCoordinates
+        Just (Rectangle x0  y0 _ _) <- liftIO $ imageViewGetDrawRect view
+        liftIO  (print (x, y) >> drawInfo ((round x) - x0) ((round y) - y0)) >> return False
+    else return False
 
   
   let setImage img = do

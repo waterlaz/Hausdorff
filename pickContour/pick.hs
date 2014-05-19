@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Main where
 
 import Graphics.UI.Gtk
@@ -16,7 +18,9 @@ import Data.Array.ST
 import Data.Array
 import Control.Monad.ST.Safe
 
+import Prelude hiding (readFile)
 import Data.Maybe
+import System.IO.Strict (readFile)
 -- import qualified Config as C
 
 
@@ -63,7 +67,7 @@ drawTree pm gc t = do
 readContour :: String -> IO Contour
 readContour s = do
     f <- readFile s
-    let (nStr:pointsStr) = lines f
+    let (nStr:pointsStr) = (length f) `seq` lines f
         n = read nStr :: Int
         pointFromStr str = (round $ read s1, round $ read s2)
                     where (s1:s2:_) = words str
@@ -73,26 +77,51 @@ drawContour pm gc c =
     zipWithM (drawLine pm gc)  c (tail $ c++[head c])
 
 
+dropWhileM fm [] = return []
+dropWhileM fm (x:xs) = do
+    p <- fm x
+    if p then dropWhileM fm xs
+         else return (x:xs)
+
+debug s xs = unsafePerformIO (print s >> return xs)
 
 getContourMap :: ContourTree -> ((Int, Int), (Int, Int)) -> Array (Int, Int) Contour
 getContourMap t b = runSTArray $ do
-    m <- newArray b (contour t) 
-    mapM_ (markInterior m) (listTree t)
+    m <- newArray b (contour t)
+    was <- newArray b 0
+    zipWithM_ (markInterior was m) [1..] (listTree t)
     return m
   where
-        markInterior :: STArray s (Int, Int) Contour -> Contour -> ST s ()
-        markInterior m c = do
+        markInterior :: STArray s (Int, Int) Int -> STArray s (Int, Int) Contour -> Int -> Contour -> ST s ()
+        markInterior was m (!i) c = do
             let drawLine (x1, y1) (x2, y2) = drawLoop x1 y1
                         where
                           drawLoop x y = do
                             writeArray m (x, y) c
+                            writeArray was (x, y) i
                             if (x /= x2 || y /=y2) then 
                                 if ((x-x1)*(y2-y1)<(x2-x1)*(y2-y1) || y2==y1) then drawLoop (x+ signum (x2-x1)) y
                                                                   else drawLoop x (y+ signum (y2-y1))
                             else return ()
                     
             zipWithM_ drawLine c (tail c ++ [head c])
-            
+            let y0 = ((maximum $ map snd c) + (minimum $ map snd c)) `div` 2
+                x0 = minimum $ map fst c
+            xs <- dropWhileM (\x -> liftM (==i) $ readArray was (x,  y0)) =<< 
+                    dropWhileM (\x -> liftM (/=i) $ readArray was (x,  y0)) [x0..]
+            let xf = head xs
+                fill !x !y = do
+                    w <- readArray was (x, y)
+                    if w==i then return ()
+                            else do
+                              writeArray was (x, y) i
+                              writeArray m (x, y) c
+                              let tstFill x y = when (inRange b (x, y)) $ fill x y
+                              tstFill (x-1) y
+                              tstFill (x+1) y
+                              tstFill x (y-1)
+                              tstFill x (y+1)
+            when (xf < maximum (map fst c)) $ fill xf y0 
 
 
 viewer pathImg pathCont = do

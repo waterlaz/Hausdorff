@@ -122,5 +122,7 @@ int write_contour_tree(contour_set_t* contours, char* dirname);
 /* reads the contour tree from file */
 contour_set_t* read_contur_tree(char* dirname);
 
+/* returns the number of contours in a set */
+int count_contours_in_set(contour_set_t* c);
 
 #endif

@@ -207,10 +207,10 @@ int write_contour(contour_t* contour, char* file_name){
 }
 
 /* This function recursively walks around the contur tree, printing the contours to files and building a tree file */
-void write_contours_rec(int* n, int depth, FILE* f, contour_set_t* cur, char* dirname){
+static void write_contours_rec(int* n, int depth, FILE* f, contour_set_t* cur, char* dirname){
     /* increse the number of contours-nodes */
     (*n)++;
-    /* print spaces accoding to depth */
+    /* print spaces according to depth */
     int i=depth;
     while(i--) fprintf(f, " ");
     /* print contour name(number) */
@@ -254,7 +254,7 @@ int write_contour_tree(contour_set_t* contours, char* dirname){
     return 0;
 }
 
-contour_set_t* read_contour_tree_rec(char* dirname, FILE* f){
+static contour_set_t* read_contour_tree_rec(char* dirname, FILE* f){
     char file_name[10000];
     strcpy(file_name, dirname);
     strcat(file_name, "/");
@@ -292,7 +292,7 @@ int count_contours_in_set(contour_set_t* c){
     return res;
 }
 
-void write_contour_set_to_array(contour_set_t* c, contour_t*** a){
+static void write_contour_set_to_array(contour_set_t* c, contour_t*** a){
     **a = c->node;
     (*a)++;
     int n = c->n;
@@ -553,7 +553,6 @@ static int find_dark_contours(contour_set_t** contours, image_t* img, int n_leve
                 v_count++;
             if(field!=fff){
                 
-                printf("ololo\n");
                 int i, j;
                 while(v_count--){
                     printf("%d %d\n", xs[v_count], ys[v_count]);
